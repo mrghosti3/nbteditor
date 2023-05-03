@@ -6,4 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-named-binary-tag = "0.6.0"
+
+[dependencies.nbt]
+package = "named-binary-tag"
+features = ["archive"]
+version = "0.6.1"
+git = "https://github.com/mrghosti3/named-binary-tag.git"
+branch = "feature/archive"
