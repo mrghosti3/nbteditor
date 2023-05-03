@@ -6,4 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-named-binary-tag = "0.6.0"
+serde_yaml = "0.9.21"
+
+[dependencies.nbt]
+package = "named-binary-tag"
+features = ["archive", "serde"]
+# version = "0.7.0-dev"
+git = "https://github.com/mrghosti3/named-binary-tag.git"
+branch = "dev"
