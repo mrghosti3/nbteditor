@@ -10,6 +10,6 @@ edition = "2021"
 [dependencies.nbt]
 package = "named-binary-tag"
 features = ["archive"]
-version = "0.6.1"
+version = "0.6.1-dev"
 git = "https://github.com/mrghosti3/named-binary-tag.git"
-branch = "feature/archive"
+branch = "dev"

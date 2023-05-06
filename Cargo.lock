@@ -56,8 +56,8 @@ dependencies = [
 
 [[package]]
 name = "named-binary-tag"
-version = "0.6.1"
-source = "git+https://github.com/mrghosti3/named-binary-tag.git?branch=feature/archive#1b75d9ad6efdf8e6215be589d77b00a0352c4b47"
+version = "0.6.1-dev"
+source = "git+https://github.com/mrghosti3/named-binary-tag.git?branch=dev#5f6e6d5f11274e3713901e617ba7937af5b064e5"
 dependencies = [
  "byteorder",
  "flate2",
