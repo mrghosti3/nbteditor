@@ -1,18 +1,70 @@
-use nbt::archive::enflate;
-use std::{env, fs, io};
+pub(crate) mod err;
+pub(crate) mod state;
+pub(crate) mod util;
 
 fn main() {
-    let args = env::args()
-        .skip(1)
-        .next()
-        .expect("Missing filename to NBT data.");
-    let mut buf = open_file(&args);
-    let root_tag = enflate::read_gzip_compound_tag(&mut buf).expect("Unable to decode!");
+    let (watch, mut state, fname_out) = init().expect("Could not init proc");
 
-    println!("{}", serde_yaml::to_string(&root_tag).unwrap());
+    util::decompile(&mut state).unwrap();
+
+    if !watch {
+        return;
+    }
+
+    let inotif = util::inotify_init().expect("Could not get inotify instance");
+    let out_fd =
+        util::inotify_add_watch(&inotif, &fname_out).expect("Could not add watch for output file");
+
+    loop {
+        // TODO: test between NBT data of various block counts
+        let evs = inotif.read_events().unwrap();
+        evs.iter().for_each(|ev| {
+            if ev.wd == out_fd {
+                println!("Changes on YAML file!");
+                util::compile(&mut state).expect("Could not compile NBT file");
+            }
+        });
+    }
 }
 
-fn open_file(fname: &str) -> io::BufReader<fs::File> {
-    let file = fs::File::open(fname).expect("Unable to open file");
-    io::BufReader::new(file)
+/// private function for collecting arguments and initiating exe STATE.
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// - input arguments are structured badly (not in a supported structure);
+/// - given file name is incorrect;
+/// - STATE cannot open files.
+fn init() -> Result<(bool, state::State, String), err::MyError> {
+    use std::env;
+    use std::path::Path;
+
+    let args: Vec<String> = env::args().skip(1).collect();
+
+    let (watch, fname_in, fname_out) = match &args[..] {
+        [watch, file] => {
+            let watch = watch == "watch";
+            if !watch {
+                return Err(err::MyError::ArgError(
+                    "When arguments there are 2 arguments, the first one must be 'watch'!!!",
+                ));
+            }
+
+            let fname_out = util::make_fname(Path::new(&file))?;
+            (true, file, fname_out)
+        }
+        [file] => {
+            let fname_out = util::make_fname(Path::new(&file))?;
+            (false, file, fname_out)
+        }
+        _ => {
+            return Err(err::MyError::ArgError(
+                "This structure of args is currently not supported.",
+            ))
+        }
+    };
+
+    let state = state::State::new(&fname_in, &fname_out)?;
+
+    Ok((watch, state, fname_out))
 }

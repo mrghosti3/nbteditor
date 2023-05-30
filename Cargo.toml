@@ -8,6 +8,11 @@ edition = "2021"
 [dependencies]
 serde_yaml = "0.9.21"
 
+[dependencies.inotify]
+package = "nix"
+features = ["inotify"]
+version = "0.26.2"
+
 [dependencies.nbt]
 package = "named-binary-tag"
 features = ["archive", "serde"]
