@@ -39,11 +39,11 @@ fn init() -> Result<(bool, state::State, String), err::MyError> {
     use std::env;
     use std::path::Path;
 
-    let args: Vec<String> = env::args().skip(1).collect();
+    let args: Box<[String]> = env::args().skip(1).collect();
 
     let (watch, fname_in, fname_out) = match &args[..] {
         [watch, file] => {
-            let watch = watch == "watch";
+            let watch = *watch == "watch";
             if !watch {
                 return Err(err::MyError::ArgError(
                     "When arguments there are 2 arguments, the first one must be 'watch'!!!",
@@ -51,11 +51,11 @@ fn init() -> Result<(bool, state::State, String), err::MyError> {
             }
 
             let fname_out = util::make_fname(Path::new(&file))?;
-            (true, file, fname_out)
+            (true, file.as_str(), fname_out)
         }
         [file] => {
             let fname_out = util::make_fname(Path::new(&file))?;
-            (false, file, fname_out)
+            (false, file.as_str(), fname_out)
         }
         _ => {
             return Err(err::MyError::ArgError(
@@ -64,7 +64,7 @@ fn init() -> Result<(bool, state::State, String), err::MyError> {
         }
     };
 
-    let state = state::State::new(&fname_in, &fname_out)?;
+    let state = state::State::new(fname_in, &fname_out)?;
 
     Ok((watch, state, fname_out))
 }

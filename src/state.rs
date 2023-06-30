@@ -8,7 +8,7 @@ pub struct State {
 }
 
 impl State {
-    pub(crate) fn new(f_nbt: &String, f_yml: &String) -> io::Result<Self> {
+    pub(crate) fn new(f_nbt: &str, f_yml: &str) -> io::Result<Self> {
         let f_nbt = OpenOptions::new().write(true).read(true).open(f_nbt)?;
         let f_yml = OpenOptions::new()
             .write(true)
