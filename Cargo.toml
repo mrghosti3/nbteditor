@@ -1,5 +1,5 @@
 [package]
-name = "nbt-editor"
+name = "nbtc"
 version = "0.1.0"
 edition = "2021"
 
@@ -16,6 +16,4 @@ version = "0.26.2"
 [dependencies.nbt]
 package = "named-binary-tag"
 features = ["archive", "serde"]
-# version = "0.7.0-dev"
-git = "https://github.com/mrghosti3/named-binary-tag.git"
-branch = "dev"
+path = "lib/nbt"
