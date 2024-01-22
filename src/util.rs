@@ -48,7 +48,7 @@ pub(crate) fn inotify_add_watch(inotif: &Inotify, fname: &str) -> nix::Result<Wa
 /// This function will return an error if .
 ///
 /// TODO: Fill up the doc.
-pub(crate) fn decompile(state: &mut state::State) -> Result<(), err::MyError> {
+pub(crate) fn decompile(state: &mut state::State) -> err::Result<()> {
     use nbt::archive::enflate;
 
     let mut buf = state.get_nbt_file_reader()?;
@@ -64,7 +64,7 @@ pub(crate) fn decompile(state: &mut state::State) -> Result<(), err::MyError> {
 /// # Errors
 ///
 /// This function will return an error if .
-pub(crate) fn compile(state: &mut state::State) -> Result<(), err::MyError> {
+pub(crate) fn compile(state: &mut state::State) -> err::Result<()> {
     use nbt::archive::deflate;
     use nbt::CompoundTag;
 
