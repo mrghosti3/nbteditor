@@ -19,25 +19,25 @@ pub(crate) fn make_fname(ifile: &Path) -> Result<String, err::MyError> {
     Ok(ofile)
 }
 
-use inotify::sys::inotify::Inotify;
+use nix::sys::inotify::{AddWatchFlags, Inotify, WatchDescriptor};
+
 /// TODO: Fill me
 ///
 /// # Errors
 ///
 /// This function will return an error if .
-pub(crate) fn inotify_init() -> inotify::Result<Inotify> {
-    use inotify::sys::inotify::InitFlags;
+pub(crate) fn inotify_init() -> nix::Result<Inotify> {
+    use nix::sys::inotify::InitFlags;
 
     Inotify::init(InitFlags::empty())
 }
 
-use inotify::sys::inotify::{AddWatchFlags, WatchDescriptor};
 /// TODO: Fill me
 ///
 /// # Errors
 ///
 /// This function will return an error if .
-pub(crate) fn inotify_add_watch(inotif: &Inotify, fname: &str) -> inotify::Result<WatchDescriptor> {
+pub(crate) fn inotify_add_watch(inotif: &Inotify, fname: &str) -> nix::Result<WatchDescriptor> {
     inotif.add_watch(fname, AddWatchFlags::IN_MODIFY)
 }
 
