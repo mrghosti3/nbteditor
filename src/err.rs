@@ -26,3 +26,10 @@ impl From<TagDecodeError> for MyError {
         Self::NBTError(value)
     }
 }
+
+#[derive(Debug)]
+pub enum ConfigErr<'a> {
+    CommandMissing,
+    BadCommand(&'a str),
+    ArgError(&'a str),
+}

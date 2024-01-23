@@ -1,70 +1,45 @@
-pub(crate) mod err;
-pub(crate) mod state;
-pub(crate) mod util;
+use std::env;
+
+mod cli;
+mod err;
+mod state;
+mod util;
 
 fn main() {
-    let (watch, mut state, fname_out) = init().expect("Could not init proc");
+    // Only to be used once for parsing now strucured data
+    let _args = env::args().skip(1).map(|arg| arg.into_boxed_str());
 
-    util::decompile(&mut state).unwrap();
-
-    if !watch {
-        return;
-    }
-
-    let inotif = util::inotify_init().expect("Could not get inotify instance");
-    let out_fd =
-        util::inotify_add_watch(&inotif, &fname_out).expect("Could not add watch for output file");
-
-    loop {
-        // TODO: test between NBT data of various block counts
-        let evs = inotif.read_events().unwrap();
-        evs.iter().for_each(|ev| {
-            if ev.wd == out_fd {
-                println!("Changes on YAML file!");
-                util::compile(&mut state).expect("Could not compile NBT file");
-            }
-        });
-    }
-}
-
-/// private function for collecting arguments and initiating exe STATE.
-///
-/// # Errors
-///
-/// This function will return an error if:
-/// - input arguments are structured badly (not in a supported structure);
-/// - given file name is incorrect;
-/// - STATE cannot open files.
-fn init() -> Result<(bool, state::State, String), err::MyError> {
-    use std::env;
-    use std::path::Path;
-
-    let args: Box<[String]> = env::args().skip(1).collect();
-
-    let (watch, fname_in, fname_out) = match &args[..] {
-        [watch, file] => {
-            let watch = *watch == "watch";
-            if !watch {
-                return Err(err::MyError::ArgError(
-                    "When arguments there are 2 arguments, the first one must be 'watch'!!!",
-                ));
-            }
-
-            let fname_out = util::make_fname(Path::new(&file))?;
-            (true, file.as_str(), fname_out)
-        }
-        [file] => {
-            let fname_out = util::make_fname(Path::new(&file))?;
-            (false, file.as_str(), fname_out)
-        }
-        _ => {
-            return Err(err::MyError::ArgError(
-                "This structure of args is currently not supported.",
-            ))
-        }
+    // Process passed arguments and config
+    let config = match cli::Config::parse(_args) {
+        Ok(args) => args,
+        Err(err) => process_err(err),
     };
 
-    let state = state::State::new(fname_in, &fname_out)?;
-
-    Ok((watch, state, fname_out))
+    let _ = match config.cmd {
+        cli::Command::Compile => todo!("Run util::compile"),
+        cli::Command::Decompile => todo!("Run util::decompile"),
+        cli::Command::Watch => todo!("Run util::watch"),
+    };
 }
+
+fn process_err(err: err::ConfigErr) -> ! {
+    use err::ConfigErr;
+    use std::process::exit;
+
+    eprint!("ERROR: ");
+    match err {
+        ConfigErr::BadCommand(bad_cmd) => {
+            eprintln!("Command '{}' is not implemented !!!", bad_cmd)
+        }
+        ConfigErr::ArgError(arg) => {
+            eprintln!("Argument: '{}' !!!", arg)
+        }
+        ConfigErr::CommandMissing => {
+            eprintln!("Missing command !!!")
+        }
+    };
+    exit(1);
+}
+
+#[cfg(test)]
+mod test;
