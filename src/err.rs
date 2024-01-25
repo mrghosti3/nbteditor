@@ -6,7 +6,6 @@ pub(crate) enum MyError {
     OSError(std::io::Error),
     YMLError(serde_yaml::Error),
     NBTError(TagDecodeError),
-    ArgError(&'static str),
 }
 
 impl From<std::io::Error> for MyError {
@@ -26,6 +25,8 @@ impl From<TagDecodeError> for MyError {
         Self::NBTError(value)
     }
 }
+
+pub(crate) type Result<T> = std::result::Result<T, MyError>;
 
 #[derive(Debug)]
 pub enum ConfigErr<'a> {

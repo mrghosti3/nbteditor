@@ -1,23 +1,4 @@
-use std::path::Path;
-
-use crate::err;
-use crate::state;
-
-/// Creates new filename to for YAML file that contains desrialised NBT file
-///
-/// # Errors
-///
-/// This function will return an error if .
-pub(crate) fn make_fname(ifile: &Path) -> Result<String, err::MyError> {
-    if !ifile.is_file() {
-        return Result::Err(err::MyError::BadFilePath);
-    }
-
-    let mut ofile: String = ifile.to_str().ok_or(err::MyError::BadFilePath)?.into();
-    ofile.push_str(".yml");
-
-    Ok(ofile)
-}
+use crate::{err, state};
 
 use nix::sys::inotify::{AddWatchFlags, Inotify, WatchDescriptor};
 
