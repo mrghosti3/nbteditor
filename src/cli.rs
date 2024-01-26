@@ -1,3 +1,5 @@
+use std::cell::OnceCell;
+
 use crate::err::ConfigErr;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -22,7 +24,8 @@ impl Command {
 #[derive(Debug)]
 pub struct Config {
     pub cmd: Command,
-    pub file_input: Box<str>,
+    file_input: Box<str>,
+    file_out: OnceCell<Box<str>>,
 }
 
 impl Config {
@@ -61,6 +64,18 @@ impl Config {
         Ok(Self {
             cmd,
             file_input: fin.unwrap(),
+            file_out: OnceCell::new(),
         })
+    }
+
+    #[inline]
+    pub fn get_in_file(&self) -> &str {
+        &self.file_input
+    }
+
+    #[inline]
+    pub fn get_out_file(&self) -> &str {
+        self.file_out
+            .get_or_init(|| format!("{}.xml", self.file_input).into_boxed_str())
     }
 }
