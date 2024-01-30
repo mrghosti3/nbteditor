@@ -1,40 +1,49 @@
-use std::fs::{self, OpenOptions};
-use std::io::{self, BufReader, BufWriter, Seek};
+use std::fs::{File, OpenOptions};
+use std::io::{BufReader, BufWriter, Seek};
+
+use crate::err::Result;
 
 /// struct used for storing global state of the program.
-pub struct State {
-    f_nbt: fs::File,
-    f_yml: fs::File,
+pub struct IOManager {
+    fin: File,
+    fout: File,
 }
 
-impl State {
-    pub(crate) fn new(f_nbt: &str, f_yml: &str) -> io::Result<Self> {
-        let f_nbt = OpenOptions::new().write(true).read(true).open(f_nbt)?;
-        let f_yml = OpenOptions::new()
+impl IOManager {
+    pub(crate) fn new(cnf: &crate::cli::Config) -> Result<Self> {
+        let fin = OpenOptions::new()
+            .write(true)
+            .read(true)
+            .open(cnf.get_in_file())?;
+        let fout = OpenOptions::new()
             .write(true)
             .read(true)
             .create(true)
-            .open(f_yml)?;
-        Ok(State { f_nbt, f_yml })
+            .open(cnf.get_out_file())?;
+        Ok(IOManager { fin, fout })
     }
 
-    pub(crate) fn get_nbt_file_reader(&mut self) -> io::Result<BufReader<&mut fs::File>> {
-        self.f_nbt.rewind()?;
-        Ok(BufReader::new(&mut self.f_nbt))
+    #[inline]
+    pub(crate) fn get_fin_reader(&mut self) -> Result<BufReader<&mut File>> {
+        self.fin.rewind()?;
+        Ok(BufReader::new(&mut self.fin))
     }
 
-    pub(crate) fn get_nbt_file_writer(&mut self) -> io::Result<BufWriter<&mut fs::File>> {
-        self.f_nbt.rewind()?;
-        Ok(BufWriter::new(&mut self.f_nbt))
+    #[inline]
+    pub(crate) fn get_fin_writer(&mut self) -> Result<BufWriter<&mut File>> {
+        self.fin.rewind()?;
+        Ok(BufWriter::new(&mut self.fin))
     }
 
-    pub(crate) fn get_yml_file_reader(&mut self) -> io::Result<BufReader<&mut fs::File>> {
-        self.f_yml.rewind()?;
-        Ok(BufReader::new(&mut self.f_yml))
+    #[inline]
+    pub(crate) fn get_fout_reader(&mut self) -> Result<BufReader<&mut File>> {
+        self.fout.rewind()?;
+        Ok(BufReader::new(&mut self.fout))
     }
 
-    pub(crate) fn get_yml_file_writer(&mut self) -> io::Result<BufWriter<&mut fs::File>> {
-        self.f_yml.rewind()?;
-        Ok(BufWriter::new(&mut self.f_yml))
+    #[inline]
+    pub(crate) fn get_fout_writer(&mut self) -> Result<BufWriter<&mut File>> {
+        self.fout.rewind()?;
+        Ok(BufWriter::new(&mut self.fout))
     }
 }
