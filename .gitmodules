@@ -1,4 +1,4 @@
 [submodule "lib/nbt"]
 	path = lib/nbt
 	url = git@github.com:mrghosti3/named-binary-tag.git
-	branch = features/serde
+	branch = master
