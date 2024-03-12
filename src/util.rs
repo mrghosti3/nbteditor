@@ -1,28 +1,8 @@
+use std::io::{Read, Seek, Write};
+
 use crate::{err, state};
 
-use nix::sys::inotify::{AddWatchFlags, Inotify, WatchDescriptor};
-
-/// TODO: Fill me
-///
-/// # Errors
-///
-/// This function will return an error if .
-pub(crate) fn inotify_init() -> nix::Result<Inotify> {
-    use nix::sys::inotify::InitFlags;
-
-    Inotify::init(InitFlags::empty())
-}
-
-/// TODO: Fill me
-///
-/// # Errors
-///
-/// This function will return an error if .
-pub(crate) fn inotify_add_watch(inotif: &Inotify, fname: &str) -> nix::Result<WatchDescriptor> {
-    inotif.add_watch(fname, AddWatchFlags::IN_MODIFY)
-}
-
-/// Takes given `rtag` and outputs it into a yaml file with name specified in `file` parameter.
+/// Takes opened NBT file and outputs it into a file with name specified in `file` parameter.
 ///
 /// # Errors
 ///
