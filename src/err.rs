@@ -18,6 +18,7 @@ pub enum ConfigErr<'a> {
 pub enum RuntimeErr {
     OSError(io::Error),
     NBTError(TagDecodeError),
+    XmlError(quick_xml::Error),
 }
 
 impl From<io::Error> for RuntimeErr {
@@ -29,6 +30,12 @@ impl From<io::Error> for RuntimeErr {
 impl From<TagDecodeError> for RuntimeErr {
     fn from(value: TagDecodeError) -> Self {
         Self::NBTError(value)
+    }
+}
+
+impl From<quick_xml::Error> for RuntimeErr {
+    fn from(value: quick_xml::Error) -> Self {
+        Self::XmlError(value)
     }
 }
 

@@ -1,11 +1,12 @@
 use std::env;
 
-use self::util::{compile, decompile};
-
 mod cli;
+mod cmd;
 mod err;
-mod state;
-mod util;
+mod xml;
+
+#[cfg(test)]
+mod test;
 
 fn main() {
     // Process passed arguments and config
@@ -19,14 +20,9 @@ fn main() {
         }
     };
 
-    let mut state = match state::IOManager::new(&config) {
-        Ok(ioman) => ioman,
-        Err(e) => process_err(err::MyError::Runtime(e)),
-    };
-
     let res = match config.cmd {
-        cli::Command::Decompile => decompile(&mut state),
-        cli::Command::Compile => compile(&mut state),
+        cli::Command::Decompile => cmd::decompile(&config),
+        cli::Command::Compile => cmd::compile(&config),
         cli::Command::Watch => todo!("Run util::watch"),
     };
 
@@ -59,10 +55,10 @@ fn process_err(err: err::MyError) -> ! {
         Runtime(RuntimeErr::NBTError(nbt_err)) => {
             eprintln!("NBT LIB Error: {}", nbt_err)
         }
+        Runtime(RuntimeErr::XmlError(xml_error)) => {
+            eprintln!("QUICK XML Error: {}", xml_error)
+        }
     };
 
     exit(1);
 }
-
-#[cfg(test)]
-mod test;
