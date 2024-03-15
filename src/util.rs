@@ -9,15 +9,17 @@ use crate::{err, state};
 /// This function will return an error if .
 ///
 /// TODO: Fill up the doc.
-pub(crate) fn decompile(state: &mut state::State) -> err::Result<()> {
-    use nbt::archive::enflate;
+pub(crate) fn decompile<'a, W>(state: &'a mut state::IOManager<W>) -> err::Result<()>
+where
+    W: Write + Seek + Read,
+{
+    use nbt::archive::enflate::read_gzip_compound_tag;
 
-    let mut buf = state.get_nbt_file_reader()?;
-    let root_tag = enflate::read_gzip_compound_tag(&mut buf)?;
-    drop(&buf);
+    let mut breader = state.get_fin_reader()?;
+    let root_tag = read_gzip_compound_tag(&mut breader)?;
+    let mut out = state.get_fout_writer()?;
 
-    let out_fd = state.get_yml_file_writer()?;
-    Ok(serde_yaml::to_writer(out_fd, &root_tag)?)
+    crate::xml::print_xml(&mut out, &root_tag)
 }
 
 /// TODO: Fill me

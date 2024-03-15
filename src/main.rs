@@ -6,6 +6,7 @@ mod cli;
 mod err;
 mod state;
 mod util;
+mod xml;
 
 fn main() {
     // Process passed arguments and config
@@ -58,6 +59,9 @@ fn process_err(err: err::MyError) -> ! {
         }
         Runtime(RuntimeErr::NBTError(nbt_err)) => {
             eprintln!("NBT LIB Error: {}", nbt_err)
+        }
+        Runtime(RuntimeErr::XmlError(xml_error)) => {
+            eprintln!("QUICK XML Error: {}", xml_error)
         }
     };
 
