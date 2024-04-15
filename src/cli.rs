@@ -1,6 +1,7 @@
 use std::cell::OnceCell;
+use std::str::FromStr;
 
-use crate::err::ConfigErr;
+use crate::err::{self, ConfigErr};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Command {
@@ -21,11 +22,40 @@ impl Command {
     }
 }
 
+pub enum Args {
+    StdOut,
+}
+
+impl FromStr for Args {
+    type Err = err::ConfigErr<'static>;
+
+    #[inline(always)]
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "--stdout" | "-s" | "-" => Ok(Self::StdOut),
+            _ => Err(Self::Err::ArgError("Not recognized given argument!")),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum FdArgument {
+    File(Box<str>),
+    StdIO,
+}
+
+impl From<Box<str>> for FdArgument {
+    #[inline(always)]
+    fn from(value: Box<str>) -> Self {
+        Self::File(value)
+    }
+}
+
 #[derive(Debug)]
 pub struct Config {
     pub cmd: Command,
     file_input: Box<str>,
-    file_out: OnceCell<Box<str>>,
+    file_out: OnceCell<FdArgument>,
 }
 
 impl Config {
@@ -46,9 +76,12 @@ impl Config {
         };
 
         let mut fin = None;
+        let mut fout = None;
         for arg in args {
             if arg.starts_with("-") {
-                eprintln!("WARNING: optional args not implemented yet: {}", arg);
+                match Args::from_str(arg.as_ref())? {
+                    Args::StdOut => fout = Some(FdArgument::StdIO),
+                }
                 continue;
             }
 
@@ -57,14 +90,19 @@ impl Config {
             }
         }
 
+        let file_out = OnceCell::new();
+        if let Some(fout) = fout {
+            file_out.set(fout).unwrap();
+        }
+
         if fin.is_none() {
             return Err(ConfigErr::ArgError("Missing file_input argument"));
         }
 
         Ok(Self {
             cmd,
+            file_out,
             file_input: fin.unwrap(),
-            file_out: OnceCell::new(),
         })
     }
 
@@ -74,8 +112,8 @@ impl Config {
     }
 
     #[inline]
-    pub fn get_out_file(&self) -> &str {
+    pub fn get_out_file(&self) -> &FdArgument {
         self.file_out
-            .get_or_init(|| format!("{}.xml", self.file_input).into_boxed_str())
+            .get_or_init(|| format!("{}.xml", self.file_input).into_boxed_str().into())
     }
 }
