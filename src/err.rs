@@ -19,6 +19,12 @@ pub enum RuntimeErr {
     OSError(io::Error),
     NBTError(TagDecodeError),
     XmlError(quick_xml::Error),
+    /// For when unrecognized/unsupported file format is detected
+    BadFileFormat {
+        file_name: &'static str,
+    },
+    /// For when unrecognized/unsupported compression algorithm is detected
+    BadDataCompression(u8),
 }
 
 impl From<io::Error> for RuntimeErr {

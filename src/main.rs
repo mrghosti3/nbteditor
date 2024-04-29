@@ -3,6 +3,7 @@ use std::env;
 mod cli;
 mod cmd;
 mod err;
+mod util;
 mod xml;
 
 #[cfg(test)]
@@ -57,6 +58,15 @@ fn process_err(err: err::MyError) -> ! {
         }
         Runtime(RuntimeErr::XmlError(xml_error)) => {
             eprintln!("QUICK XML Error: {}", xml_error)
+        }
+        Runtime(RuntimeErr::BadFileFormat { .. }) => {
+            eprintln!("Unrecognised/unsupported file format")
+        }
+        Runtime(RuntimeErr::BadDataCompression(algo_id)) => {
+            eprintln!(
+                "Unrecognised/unsupported compression algorithm. Found algorithm id: {}",
+                algo_id
+            )
         }
     };
 
