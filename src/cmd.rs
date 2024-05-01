@@ -48,7 +48,15 @@ pub(crate) fn decompile(config: &cli::Config) -> err::Result<()> {
 /// # Errors
 ///
 /// This function will return an error if .
-pub(crate) fn compile(config: &cli::Config) -> err::Result<()>
-{
-    todo!("To be implemented")
+pub(crate) fn compile(config: &cli::Config) -> err::Result<()> {
+    use nbt::encode::write_compound_tag;
+
+    let mut fin = BufReader::new(File::open(config.get_in_file())?);
+    let nbt_data = crate::xml::read::read_xml(&mut fin)?;
+    let mut fout = BufWriter::new(unsafe {
+        File::from_raw_fd(stdout().as_raw_fd())
+    });
+
+    write_compound_tag(&mut fout, &nbt_data)?;
+    Ok(())
 }

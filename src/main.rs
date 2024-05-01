@@ -68,6 +68,15 @@ fn process_err(err: err::MyError) -> ! {
                 algo_id
             )
         }
+        Runtime(RuntimeErr::AsciiToUtf8(utf8_err)) => {
+            eprintln!("Bad text in xml: {}", utf8_err)
+        }
+        Runtime(RuntimeErr::ParseInt(int_err)) => {
+            eprintln!("integer error: {}", int_err)
+        }
+        Runtime(RuntimeErr::ParseFloat(float_err)) => {
+            eprintln!("float error: {}", float_err)
+        }
     };
 
     exit(1);

@@ -1,4 +1,6 @@
 use std::io;
+use std::num::{ParseFloatError, ParseIntError};
+use std::str::Utf8Error;
 use nbt::decode::TagDecodeError;
 
 #[derive(Debug)]
@@ -25,6 +27,9 @@ pub enum RuntimeErr {
     },
     /// For when unrecognized/unsupported compression algorithm is detected
     BadDataCompression(u8),
+    AsciiToUtf8(Utf8Error),
+    ParseInt(ParseIntError),
+    ParseFloat(ParseFloatError),
 }
 
 impl From<io::Error> for RuntimeErr {
@@ -42,6 +47,24 @@ impl From<TagDecodeError> for RuntimeErr {
 impl From<quick_xml::Error> for RuntimeErr {
     fn from(value: quick_xml::Error) -> Self {
         Self::XmlError(value)
+    }
+}
+
+impl From<Utf8Error> for RuntimeErr {
+    fn from(value: Utf8Error) -> Self {
+        Self::AsciiToUtf8(value)
+    }
+}
+
+impl From<ParseIntError> for RuntimeErr {
+    fn from(value: ParseIntError) -> Self {
+        Self::ParseInt(value)
+    }
+}
+
+impl From<ParseFloatError> for RuntimeErr {
+    fn from(value: ParseFloatError) -> Self {
+        Self::ParseFloat(value)
     }
 }
 
