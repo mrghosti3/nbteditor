@@ -39,7 +39,7 @@ fn process_err(err: err::MyError) -> ! {
     use err::{ConfigErr, RuntimeErr};
     use std::process::exit;
 
-    eprint!("ERROR: ");
+    eprint!("nbtc: ");
     match err {
         Setup(ConfigErr::CommandMissing) => {
             eprintln!("Missing command !!!")
