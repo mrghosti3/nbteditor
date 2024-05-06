@@ -1,4 +1,7 @@
 use std::cell::OnceCell;
+use std::fs::File;
+use std::io::{stdin, stdout};
+use std::os::fd::{AsRawFd, FromRawFd};
 use std::str::FromStr;
 
 use crate::err::{self, ConfigErr};
@@ -23,7 +26,7 @@ impl Command {
 }
 
 pub enum Args {
-    StdOut,
+    FileOutput,
 }
 
 impl FromStr for Args {
@@ -32,7 +35,7 @@ impl FromStr for Args {
     #[inline(always)]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "--stdout" | "-s" | "-" => Ok(Self::StdOut),
+            "--file" | "-f" => Ok(Self::FileOutput),
             _ => Err(Self::Err::ArgError("Not recognized given argument!")),
         }
     }
@@ -41,7 +44,32 @@ impl FromStr for Args {
 #[derive(Debug, Clone)]
 pub enum FdArgument {
     File(Box<str>),
-    StdIO,
+    StdIn,
+    StdOut,
+}
+
+impl FdArgument {
+    pub fn to_str(&self) -> &'static str {
+        match self {
+            Self::StdIn => "STDIN",
+            Self::StdOut => "STDOUT",
+            Self::File(fname) => Box::leak(fname.clone()),
+        }
+    }
+
+    pub fn to_file(&self, write: bool) -> std::io::Result<File> {
+        match self {
+            Self::StdIn => unsafe { Ok(File::from_raw_fd(stdin().as_raw_fd())) },
+            Self::StdOut => unsafe { Ok(File::from_raw_fd(stdout().as_raw_fd())) },
+            Self::File(fname) => {
+                if write {
+                    File::create(fname.as_ref())
+                } else {
+                    File::open(fname.as_ref())
+                }
+            }
+        }
+    }
 }
 
 impl From<Box<str>> for FdArgument {
@@ -54,8 +82,8 @@ impl From<Box<str>> for FdArgument {
 #[derive(Debug)]
 pub struct Config {
     pub cmd: Command,
-    file_input: Box<str>,
-    file_out: OnceCell<FdArgument>,
+    file_input: FdArgument,
+    file_out: FdArgument,
 }
 
 impl Config {
@@ -75,45 +103,42 @@ impl Config {
             }
         };
 
-        let mut fin = None;
-        let mut fout = None;
-        for arg in args {
-            if arg.starts_with("-") {
-                match Args::from_str(arg.as_ref())? {
-                    Args::StdOut => fout = Some(FdArgument::StdIO),
-                }
+        let fin: OnceCell<FdArgument> = OnceCell::new();
+        let fout: OnceCell<FdArgument> = OnceCell::new();
+        while let Some(arg) = args.next() {
+            if arg.starts_with("-") && arg.as_ref() != "-" {
+                let _ = match Args::from_str(arg.as_ref())? {
+                    Args::FileOutput => fout.set(FdArgument::File(
+                        args.next()
+                            .ok_or(ConfigErr::ArgError("Missing output file name!"))?,
+                    )),
+                };
                 continue;
             }
 
-            if fin.is_none() {
-                fin = Some(arg);
-            }
+            let _ = match arg.as_ref() {
+                "-" => fin.set(FdArgument::StdIn),
+                _ => fin.set(FdArgument::File(arg)),
+            };
         }
 
-        let file_out = OnceCell::new();
-        if let Some(fout) = fout {
-            file_out.set(fout).unwrap();
-        }
-
-        if fin.is_none() {
-            return Err(ConfigErr::ArgError("Missing file_input argument"));
-        }
+        fin.get_or_init(|| FdArgument::StdIn);
+        fout.get_or_init(|| FdArgument::StdOut);
 
         Ok(Self {
             cmd,
-            file_out,
-            file_input: fin.unwrap(),
+            file_out: fout.into_inner().unwrap(),
+            file_input: fin.into_inner().unwrap(),
         })
     }
 
     #[inline]
-    pub fn get_in_file(&self) -> &str {
+    pub fn get_in_file(&self) -> &FdArgument {
         &self.file_input
     }
 
     #[inline]
     pub fn get_out_file(&self) -> &FdArgument {
-        self.file_out
-            .get_or_init(|| format!("{}.xml", self.file_input).into_boxed_str().into())
+        &self.file_out
     }
 }

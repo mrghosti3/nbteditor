@@ -1,8 +1,5 @@
-use std::fs::File;
-use std::io::{stdout, BufRead, BufReader, BufWriter};
-use std::os::fd::{AsRawFd, FromRawFd};
+use std::io::{BufRead, BufReader, BufWriter};
 
-use crate::cli::FdArgument as FdArg;
 use crate::util::DataFormat;
 use crate::{cli, err};
 
@@ -17,7 +14,7 @@ pub(crate) fn decompile(config: &cli::Config) -> err::Result<()> {
     use nbt::archive::enflate::read_gzip_compound_tag;
     use nbt::decode::read_compound_tag;
 
-    let mut fin = BufReader::new(File::open(config.get_in_file())?);
+    let mut fin = BufReader::new(config.get_in_file().to_file(false)?);
     let magic_bytes = &fin.fill_buf()?[..DataFormat::BYTE_COUNT]
         .try_into()
         .unwrap();
@@ -26,19 +23,13 @@ pub(crate) fn decompile(config: &cli::Config) -> err::Result<()> {
         DataFormat::Gzip => read_gzip_compound_tag(&mut fin)?,
         DataFormat::NBT => read_compound_tag(&mut fin)?,
         _ => {
-            let tmp = Box::from(config.get_in_file());
             return Err(err::RuntimeErr::BadFileFormat {
-                file_name: Box::leak(tmp),
+                file_name: config.get_in_file().to_str(),
             });
         }
     };
 
-    let fout = match config.get_out_file() {
-        FdArg::StdIO => unsafe { File::from_raw_fd(stdout().as_raw_fd()) },
-        FdArg::File(ref file_name) => File::create(file_name.as_ref())?,
-    };
-
-    let mut fout = BufWriter::new(fout);
+    let mut fout = BufWriter::new(config.get_out_file().to_file(true)?);
 
     crate::xml::write::print_xml(&mut fout, &root_tag)
 }
@@ -51,11 +42,9 @@ pub(crate) fn decompile(config: &cli::Config) -> err::Result<()> {
 pub(crate) fn compile(config: &cli::Config) -> err::Result<()> {
     use nbt::encode::write_compound_tag;
 
-    let mut fin = BufReader::new(File::open(config.get_in_file())?);
+    let mut fin = BufReader::new(config.get_in_file().to_file(false)?);
     let nbt_data = crate::xml::read::read_xml(&mut fin)?;
-    let mut fout = BufWriter::new(unsafe {
-        File::from_raw_fd(stdout().as_raw_fd())
-    });
+    let mut fout = BufWriter::new(config.get_out_file().to_file(true)?);
 
     write_compound_tag(&mut fout, &nbt_data)?;
     Ok(())
