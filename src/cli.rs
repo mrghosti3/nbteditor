@@ -8,6 +8,7 @@ use crate::err::{self, ConfigErr};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Command {
+    Help,
     Compile,
     Decompile,
     Watch,
@@ -17,6 +18,7 @@ impl Command {
     #[inline]
     fn from_str(cmd: &str) -> Option<Self> {
         match cmd {
+            "help" | "h" => Some(Self::Help),
             "compile" | "c" => Some(Self::Compile),
             "decompile" | "d" => Some(Self::Decompile),
             "watch" | "w" => Some(Self::Watch),

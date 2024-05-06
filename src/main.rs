@@ -22,6 +22,7 @@ fn main() {
     };
 
     let res = match config.cmd {
+        cli::Command::Help => cmd::help(),
         cli::Command::Decompile => cmd::decompile(&config),
         cli::Command::Compile => cmd::compile(&config),
         cli::Command::Watch => todo!("Run util::watch"),

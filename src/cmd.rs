@@ -1,7 +1,15 @@
-use std::io::{BufRead, BufReader, BufWriter};
+use std::io::{stdout, BufRead, BufReader, BufWriter, Write};
 
 use crate::util::DataFormat;
 use crate::{cli, err};
+
+const HELP_TEXT: &[u8] = include_bytes!("help.txt");
+
+pub(crate) fn help() -> err::Result<()> {
+    stdout().write_all(HELP_TEXT)?;
+
+    Ok(())
+}
 
 /// Takes opened NBT file and outputs it into a file with name specified in `file` parameter.
 ///

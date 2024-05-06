@@ -1,0 +1,14 @@
+Usage: nbtc [COMMAND] [OPTION]... [FILE]
+Process Minecraft NBT FILE.
+
+With no FILE, or when FILE is -, read standard input.
+
+Command:
+
+  help         prints out this help message
+  compile      takes XML input and convert it into NBT data
+  decompile    takes NBT data and convert it to XML file
+
+Options:
+
+  -f, --file FILE    output all data to specified FILE
