@@ -5,6 +5,7 @@ use std::os::fd::{AsRawFd, FromRawFd};
 use std::str::FromStr;
 
 use crate::err::{self, ConfigErr};
+use crate::util::DataFormat;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Command {
@@ -29,6 +30,8 @@ impl Command {
 
 pub enum Args {
     FileOutput,
+    Gzip,
+    Zlib,
 }
 
 impl FromStr for Args {
@@ -38,6 +41,8 @@ impl FromStr for Args {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "--file" | "-f" => Ok(Self::FileOutput),
+            "--gzip" | "-z" => Ok(Self::Gzip),
+            "--zlib" => Ok(Self::Zlib),
             _ => Err(Self::Err::ArgError("Not recognized given argument!")),
         }
     }
@@ -86,6 +91,7 @@ pub struct Config {
     pub cmd: Command,
     file_input: FdArgument,
     file_out: FdArgument,
+    format: DataFormat,
 }
 
 impl Config {
@@ -107,13 +113,22 @@ impl Config {
 
         let fin: OnceCell<FdArgument> = OnceCell::new();
         let fout: OnceCell<FdArgument> = OnceCell::new();
+        let dformat: OnceCell<DataFormat> = OnceCell::new();
         while let Some(arg) = args.next() {
             if arg.starts_with("-") && arg.as_ref() != "-" {
-                let _ = match Args::from_str(arg.as_ref())? {
-                    Args::FileOutput => fout.set(FdArgument::File(
-                        args.next()
-                            .ok_or(ConfigErr::ArgError("Missing output file name!"))?,
-                    )),
+                match Args::from_str(arg.as_ref())? {
+                    Args::FileOutput => {
+                        let _ = fout.set(FdArgument::File(
+                            args.next()
+                                .ok_or(ConfigErr::ArgError("Missing output file name!"))?,
+                        ));
+                    }
+                    Args::Gzip => {
+                        let _ = dformat.set(DataFormat::Gzip);
+                    }
+                    Args::Zlib => {
+                        let _ = dformat.set(DataFormat::Zlib);
+                    }
                 };
                 continue;
             }
@@ -126,11 +141,13 @@ impl Config {
 
         fin.get_or_init(|| FdArgument::StdIn);
         fout.get_or_init(|| FdArgument::StdOut);
+        dformat.get_or_init(|| DataFormat::default());
 
         Ok(Self {
             cmd,
             file_out: fout.into_inner().unwrap(),
             file_input: fin.into_inner().unwrap(),
+            format: dformat.into_inner().unwrap()
         })
     }
 
@@ -142,5 +159,10 @@ impl Config {
     #[inline]
     pub fn get_out_file(&self) -> &FdArgument {
         &self.file_out
+    }
+
+    #[inline]
+    pub fn get_data_format(&self) -> &DataFormat {
+        &self.format
     }
 }
