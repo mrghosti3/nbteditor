@@ -1,4 +1,2 @@
-target/
 target
-test/
-test
+/data
