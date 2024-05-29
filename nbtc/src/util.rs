@@ -1,5 +1,6 @@
 use crate::err::RuntimeErr;
 
+#[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum DataFormat {
     Gzip = 1,
@@ -7,6 +8,7 @@ pub enum DataFormat {
     NBT = 3,
     LZ4 = 4,
     Custom = 127,
+    Unknown
 }
 
 impl DataFormat {
@@ -25,6 +27,14 @@ impl DataFormat {
             _ => Self::NBT,
         }
     }
+
+    #[inline]
+    pub fn is_default(&self) -> bool {
+        match self {
+            Self::Unknown => true,
+            _ => false,
+        }
+    }
 }
 
 impl TryFrom<u8> for DataFormat {
@@ -38,5 +48,11 @@ impl TryFrom<u8> for DataFormat {
             127 => Ok(Self::Custom),
             _ => Err(RuntimeErr::BadDataCompression(value))
         }
+    }
+}
+
+impl Default for DataFormat {
+    fn default() -> Self {
+        Self::Unknown
     }
 }
