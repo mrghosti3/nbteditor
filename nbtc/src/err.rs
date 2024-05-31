@@ -1,7 +1,7 @@
 use std::io;
 use std::num::{ParseFloatError, ParseIntError};
 use std::str::Utf8Error;
-use nbt::decode::TagDecodeError;
+use nbt::err::{TagDecodeError, TagEncodeError};
 
 #[derive(Debug)]
 pub(crate) enum MyError<'a> {
@@ -19,7 +19,8 @@ pub enum ConfigErr<'a> {
 #[derive(Debug)]
 pub enum RuntimeErr {
     OSError(io::Error),
-    NBTError(TagDecodeError),
+    NBTDecode(TagDecodeError),
+    NBTEncode(TagEncodeError),
     XmlError(quick_xml::Error),
     /// For when unrecognized/unsupported file format is detected
     BadFileFormat {
@@ -40,7 +41,13 @@ impl From<io::Error> for RuntimeErr {
 
 impl From<TagDecodeError> for RuntimeErr {
     fn from(value: TagDecodeError) -> Self {
-        Self::NBTError(value)
+        Self::NBTDecode(value)
+    }
+}
+
+impl From<TagEncodeError> for RuntimeErr {
+    fn from(value: TagEncodeError) -> Self {
+        Self::NBTEncode(value)
     }
 }
 

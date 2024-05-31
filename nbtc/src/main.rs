@@ -54,7 +54,10 @@ fn process_err(err: err::MyError) -> ! {
         Runtime(RuntimeErr::OSError(os_err)) => {
             eprintln!("OS Error: {}", os_err)
         }
-        Runtime(RuntimeErr::NBTError(nbt_err)) => {
+        Runtime(RuntimeErr::NBTDecode(nbt_err)) => {
+            eprintln!("NBT LIB Error: {}", nbt_err)
+        }
+        Runtime(RuntimeErr::NBTEncode(nbt_err)) => {
             eprintln!("NBT LIB Error: {}", nbt_err)
         }
         Runtime(RuntimeErr::XmlError(xml_error)) => {

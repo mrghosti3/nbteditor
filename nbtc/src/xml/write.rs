@@ -5,12 +5,12 @@ use std::io::{BufWriter, Write};
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::writer::Writer;
 
-use nbt::{CompoundTag, Tag};
+use nbt::{CompoundTag, Map, Tag};
 
 use super::consts::*;
 use crate::err;
 
-type TagMap<'a> = (&'a String, &'a Tag);
+type TagMap<'a> = (&'a Box<str>, &'a Tag);
 
 pub fn print_xml<'a, T: Write>(
     stream: &'a mut BufWriter<T>,
@@ -24,7 +24,7 @@ pub fn print_xml<'a, T: Write>(
     writer.write_event(Event::Start({
         let mut elem = BytesStart::new(TAG_COMPOUND);
         if let Some(rtag_name) = &rtag.name {
-            elem.push_attribute((TAG_NAME_ATTR, rtag_name.as_str()));
+            elem.push_attribute((TAG_NAME_ATTR, rtag_name.as_ref()));
         }
 
         elem
@@ -33,6 +33,7 @@ pub fn print_xml<'a, T: Write>(
     traverse_nbt(&mut writer, &mut tag_stack)?;
 
     writer.write_event(Event::Eof)?;
+    writeln!(writer.get_mut())?;
 
     Ok(())
 }
@@ -105,7 +106,7 @@ fn traverse_nbt<W: Write>(
                 ))?;
             }
             Tag::Compound(c) => {
-                tag_stack.push_back(NbtIter::from_compound(c));
+                tag_stack.push_back(NbtIter::from_map(c));
 
                 writer.write_event(Event::Start(
                     BytesStart::new(TAG_COMPOUND).with_attributes(attr),
@@ -175,6 +176,10 @@ impl<'a> NbtIter<'a> {
     fn from_compound(ctag: &'a CompoundTag) -> Self {
         Self::Compound(Box::new(ctag.iter()))
     }
+
+    fn from_map(map: &'a Map) -> Self {
+        Self::Compound(Box::new(map.iter()))
+    }
 }
 
 impl<'a> Iterator for NbtIter<'a> {
@@ -186,7 +191,7 @@ impl<'a> Iterator for NbtIter<'a> {
         match self {
             Compound(i) => i
                 .next()
-                .map(|(name, tag)| NbtElement::TagMap(name.as_str(), tag)),
+                .map(|(name, tag)| NbtElement::TagMap(name.as_ref(), tag)),
             List(i) => i.next().map(|el| NbtElement::Tag(el)),
         }
     }
