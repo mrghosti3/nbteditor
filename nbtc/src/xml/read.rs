@@ -42,9 +42,9 @@ pub fn read_xml<F: Read>(reader: &mut BufReader<F>) -> err::Result<CompoundTag> 
     }
 
     match el_buf.pop_front().unwrap().tag {
-        Tag::Compound(ctag) => Ok(ctag),
-        tag => Err(RuntimeErr::NBTError(
-            nbt::decode::TagDecodeError::RootMustBeCompoundTag { actual_tag: tag },
+        Tag::Compound(ctag) => Ok(CompoundTag::with(ctag)),
+        _ => Err(RuntimeErr::NBTDecode(
+            nbt::err::TagDecodeError::RootMustBeCompound,
         )),
     }
 }
@@ -54,7 +54,7 @@ fn parse_text(text: BytesText, el: &mut NbtElement) -> Result<(), RuntimeErr> {
     let inner = from_utf8(&text)?;
 
     match &mut el.tag {
-        Tag::String(text) => text.push_str(inner),
+        Tag::String(text) => *text = inner.into(),
         Tag::Byte(byte) => *byte = inner.parse()?,
         Tag::Short(short) => *short = inner.parse()?,
         Tag::Int(int) => *int = inner.parse()?,
@@ -93,19 +93,12 @@ fn process_event(ev: &BytesStart) -> NbtElement {
         TAG_LONG_B => Tag::Long(0),
         TAG_FLOAT_B => Tag::Float(0.0),
         TAG_DOUBLE_B => Tag::Double(0.0),
-        TAG_STRING_B => Tag::String(String::with_capacity(3)),
-        TAG_LIST_B => Tag::List(Vec::with_capacity(1)),
-        TAG_COMPOUND_B => {
-            let tmp = match name {
-                None => CompoundTag::new(),
-                Some(ref name) => CompoundTag::named(name.clone()),
-            };
-
-            Tag::Compound(tmp)
-        }
-        TAG_BYTE_ARR_B => Tag::ByteArray(Vec::with_capacity(1)),
-        TAG_INT_ARR_B => Tag::IntArray(Vec::with_capacity(1)),
-        TAG_LONG_ARR_B => Tag::LongArray(Vec::with_capacity(1)),
+        TAG_STRING_B => Tag::String("".into()),
+        TAG_LIST_B => Tag::List([].into()),
+        TAG_COMPOUND_B => Tag::Compound(Default::default()),
+        TAG_BYTE_ARR_B => Tag::ByteArray([].into()),
+        TAG_INT_ARR_B => Tag::IntArray([].into()),
+        TAG_LONG_ARR_B => Tag::LongArray([].into()),
         _ => unreachable!(),
     };
 
@@ -117,7 +110,9 @@ fn add_to_parent(parent: &mut NbtElement, el: NbtElement) -> err::Result<()> {
     let current_tag_tname = el.tag.type_name();
 
     match (&mut parent.tag, el.tag) {
-        (Tag::Compound(ctag), tag) => ctag.insert(el.name.unwrap(), tag),
+        (Tag::Compound(ctag), tag) => {
+            ctag.insert(el.name.unwrap(), tag);
+        }
         (Tag::List(ltag), tag) => ltag.push(tag),
         (Tag::ByteArray(array), Tag::Byte(val)) => array.push(val),
         (Tag::IntArray(array), Tag::Int(val)) => array.push(val),
